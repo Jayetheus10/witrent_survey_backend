@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Find Safe Housing in Witbank | WitRent{% endblock %}
+
+{% block css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/pages.css') }}">{% endblock %}
+
+{% block heading %}Find Your Perfect Room in Witbank{% endblock %}
+
+{% block content %}
+<div class="intro-section">
+    <div class="intro-image">
+        <img src="{{ url_for('static', filename='img/witbank-map.png') }}" alt="Witbank Areas" loading="lazy">
+    </div>
+    <div class="intro-text">
+        <h2>Helping students and workers find verified rentals</h2>
+        <p>Our survey helps us build a better platform tailored to Witbank's unique needs.</p>
+        <div class="cta-buttons">
+            <a href="{{ url_for('survey_form') }}" class="btn btn-primary">Take Survey</a>
+            <a href="{{ url_for('compliance') }}" class="btn btn-secondary">Our Compliance</a>
+        </div>
+    </div>
+</div>
+
+<div class="features-grid">
+    <div class="feature-card">
+        <svg class="feature-icon">...</svg>
+        <h3>Verified Listings</h3>
+        <p>Every property checked by our team</p>
+    </div>
+    <div class="feature-card">
+        <svg class="feature-icon">...</svg>
+        <h3>No Scams</h3>
+        <p>Secure payments with escrow protection</p>
+    </div>
+    <div class="feature-card">
+        <svg class="feature-icon">...</svg>
+        <h3>Local Experts</h3>
+        <p>We know Witbank's rental market</p>
+    </div>
+</div>
+{% endblock %}

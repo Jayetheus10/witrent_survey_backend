@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Our Data Compliance | WitRent{% endblock %}
+
+
+{% block css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/pages.css') }}">{% endblock %}
+{% block heading %}Your Data Protection{% endblock %}
+
+{% block content %}
+<div class="compliance-content">
+    <section class="compliance-section">
+        <h2><svg class="icon">...</svg> POPIA Compliance</h2>
+        <p>We adhere strictly to South Africa's Protection of Personal Information Act (POPIA):</p>
+        <ul class="compliance-list">
+            <li>All data is anonymized where possible</li>
+            <li>Contact information is stored separately</li>
+            <li>Regular security audits</li>
+        </ul>
+    </section>
+
+    <section class="compliance-section">
+        <h2><svg class="icon">...</svg> Data Collection Principles</h2>
+        <div class="principles-grid">
+            <div class="principle">
+                <h3>Minimal Data</h3>
+                <p>We only collect what's absolutely necessary</p>
+            </div>
+            <div class="principle">
+                <h3>Clear Purpose</h3>
+                <p>Data used solely for improving housing access</p>
+            </div>
+        </div>
+    </section>
+
+    <div class="contact-compliance">
+        <h3>Questions about your data?</h3>
+        <a href="mailto:compliance@witrent.co.za" class="btn btn-secondary">
+            Contact Our Compliance Officer
+        </a>
+    </div>
+</div>
+{% endblock %}

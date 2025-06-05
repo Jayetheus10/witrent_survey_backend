@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Thank You | WitRent{% endblock %}
+{% block css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/pages.css') }}">{% endblock %}
+{% block heading %}Thank You for Your Input!{% endblock %}
+
+{% block content %}
+<div class="success-message">
+    <svg class="success-icon">...</svg>
+    <p>Your responses will help us build better housing solutions for Witbank.</p>
+    
+    <div class="next-steps">
+        <h3>What happens next?</h3>
+        <ol>
+            <li>We analyze all survey responses</li>
+            <li>Launch beta version to participants</li>
+            <li>Full platform rollout by 2024</li>
+        </ol>
+    </div>
+
+    <div class="share-cta">
+        <p>Help us reach more people:</p>
+        <div class="social-share">
+            <button class="share-btn whatsapp">WhatsApp</button>
+            <button class="share-btn facebook">Facebook</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
