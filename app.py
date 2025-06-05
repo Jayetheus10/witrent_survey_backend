@@ -7,13 +7,11 @@ from flask_cors import CORS
 import os
 
 app = Flask(__name__)
-print(os.environ.get('SQLALCHEMY_DATABASE_URI'))
 
-
-app.config['SECRET_KEY'] = 'witrent_secret_key_that_is_super_secret'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('SQLALCHEMY_DATABASE_URI')
 
-CORS(app=app, origins=['*'])
+CORS(app=app, origins=['https://witrent-survey-frontend.vercel.app'])
 
 db.init_app(app)
 with app.app_context():
