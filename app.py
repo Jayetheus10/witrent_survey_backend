@@ -10,10 +10,8 @@ from datetime import timedelta, datetime
 from sqlalchemy import func
 
 app = Flask(__name__)
-load_dotenv()
 
-
-app.config['SECRET_KEY'] = 'witrent_secret_key_that_is_super_secret'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('SQLALCHEMY_DATABASE_URI')
 
 CORS(app=app, origins=['https://witrent-survey-frontend.vercel.app'])
