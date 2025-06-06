@@ -5,9 +5,10 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_cors import CORS
 import os
-from dotenv import load_dotenv
-from datetime import timedelta, datetime
 from sqlalchemy import func
+import logging
+from logging.handlers import RotatingFileHandler
+import sys
 
 app = Flask(__name__)
 
@@ -95,56 +96,24 @@ def submit_survey():
         }), 500
 
 
+# Configure logging
+file_handler = RotatingFileHandler('witrent_survey.log', maxBytes=10*1024*1024, backupCount=10)
+file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'))
+console_handler = logging.StreamHandler(sys.stdout)
+console_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+app.logger.addHandler(file_handler)
+app.logger.addHandler(console_handler)
+app.logger.setLevel(logging.INFO)
+
 @app.route('/api/survey/responses', methods=['GET'])
-def get_survey_responses():
+def get_all_responses():
     try:
-        # Pagination parameters
-        page = request.args.get('page', 1, type=int)
-        per_page = request.args.get('per_page', 10, type=int)
+        app.logger.info("Fetching all survey responses")
         
-        # Filter parameters (matching your frontend filters)
-        user_type = request.args.get('userType')
-        age_group = request.args.get('ageGroup')
-        currently_looking = request.args.get('currentlyLooking')
+        # Get all responses ordered by timestamp
+        responses = Response.query.order_by(Response.timestamp.desc()).all()
         
-        # Date range filter (converting from frontend format)
-        date_from = request.args.get('dateFrom')
-        date_to = request.args.get('dateTo')
-        
-        # Base query
-        query = Response.query
-        
-        # Apply filters (matching your frontend filter options)
-        if user_type:
-            query = query.filter(Response.user_type == user_type)
-        if age_group:
-            query = query.filter(Response.age_group == age_group)
-        if currently_looking:
-            query = query.filter(Response.currently_looking == currently_looking.lower())
-        
-        # Date range filter
-        if date_from:
-            try:
-                date_from = datetime.strptime(date_from, '%Y-%m-%d')
-                query = query.filter(Response.timestamp >= date_from)
-            except ValueError:
-                return jsonify({'error': 'Invalid dateFrom format. Use YYYY-MM-DD'}), 400
-        if date_to:
-            try:
-                date_to = datetime.strptime(date_to, '%Y-%m-%d') + timedelta(days=1)
-                query = query.filter(Response.timestamp <= date_to)
-            except ValueError:
-                return jsonify({'error': 'Invalid dateTo format. Use YYYY-MM-DD'}), 400
-        
-        # Paginate results
-        paginated = query.order_by(Response.timestamp.desc()).paginate(
-            page=page, 
-            per_page=per_page, 
-            error_out=False
-        )
-        
-        # Format response to match your frontend's SurveyResponse type
-        responses = [{
+        formatted_responses = [{
             'id': r.id,
             'timestamp': r.timestamp.isoformat() + 'Z',
             'currently_looking': r.currently_looking,
@@ -156,115 +125,95 @@ def get_survey_responses():
             'search_method': r.search_method,
             'biggest_challenge': r.biggest_challenge,
             'desired_features': r.get_features_list()
-        } for r in paginated.items]
+        } for r in responses]
         
+        app.logger.info(f"Returning {len(responses)} total responses")
         return jsonify({
-            'data': responses,
-            'pagination': {
-                'total': paginated.total,
-                'pages': paginated.pages,
-                'current_page': paginated.page,
-                'per_page': paginated.per_page
-            }
+            'success': True,
+            'data': formatted_responses,
+            'count': len(responses)
         })
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        app.logger.error(f"Failed to fetch responses: {str(e)}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': 'Failed to fetch survey responses'
+        }), 500
 
 @app.route('/api/survey/analytics', methods=['GET'])
-def get_survey_analytics():
+def get_complete_analytics():
     try:
-        # Get filter parameters (same as responses endpoint)
-        user_type = request.args.get('userType')
-        age_group = request.args.get('ageGroup')
-        currently_looking = request.args.get('currentlyLooking')
-        date_from = request.args.get('dateFrom')
-        date_to = request.args.get('dateTo')
+        app.logger.info("Generating complete survey analytics")
         
-        # Base query
-        query = Response.query
-        
-        # Apply same filters as responses endpoint
-        if user_type:
-            query = query.filter(Response.user_type == user_type)
-        if age_group:
-            query = query.filter(Response.age_group == age_group)
-        if currently_looking:
-            query = query.filter(Response.currently_looking == currently_looking.lower())
-        if date_from:
-            date_from = datetime.strptime(date_from, '%Y-%m-%d')
-            query = query.filter(Response.timestamp >= date_from)
-        if date_to:
-            date_to = datetime.strptime(date_to, '%Y-%m-%d') + timedelta(days=1)
-            query = query.filter(Response.timestamp <= date_to)
-        
-        # Get all filtered responses
-        responses = query.all()
+        # Get all responses
+        responses = Response.query.all()
         
         if not responses:
-            return jsonify({'error': 'No survey data found'}), 404
+            app.logger.warning("No survey data found for analytics")
+            return jsonify({
+                'success': False,
+                'error': 'No survey data available'
+            }), 404
         
-        # Calculate analytics to match your frontend needs
+        # Calculate comprehensive analytics
         analytics = {
-            'totalResponses': len(responses),
-            'currentlyLookingPercentage': round(
-                100 * sum(1 for r in responses if r.currently_looking == 'yes') / len(responses),
-                1
-            ),
-            'userTypeDistribution': {},
-            'ageGroupDistribution': {},
-            'budgetDistribution': {},
-            'topPriorities': [],
-            'topChallenges': []
+            'success': True,
+            'summary': {
+                'total_responses': len(responses),
+                'currently_looking': sum(1 for r in responses if r.currently_looking == 'yes'),
+                'not_looking': sum(1 for r in responses if r.currently_looking == 'no'),
+                'earliest_response': min(r.timestamp for r in responses).isoformat() + 'Z',
+                'latest_response': max(r.timestamp for r in responses).isoformat() + 'Z'
+            },
+            'demographics': {
+                'user_types': dict(db.session.query(Response.user_type, func.count(Response.id))
+                                 .group_by(Response.user_type).all()),
+                'age_groups': dict(db.session.query(Response.age_group, func.count(Response.id))
+                                  .group_by(Response.age_group).all())
+            },
+            'preferences': {
+                'budgets': dict(db.session.query(Response.max_budget, func.count(Response.id))
+                              .group_by(Response.max_budget).all()),
+                'search_methods': dict(db.session.query(Response.search_method, func.count(Response.id))
+                                     .group_by(Response.search_method).all())
+            },
+            'challenges': dict(db.session.query(Response.biggest_challenge, func.count(Response.id))
+                             .group_by(Response.biggest_challenge).all()),
+            'features': {}
         }
         
-        # User type distribution
-        user_types = db.session.query(
-            Response.user_type, 
-            func.count(Response.id)
-        ).group_by(Response.user_type).all()
+        # Calculate feature popularity
+        features = {}
+        for r in responses:
+            for feature in r.get_features_list():
+                features[feature] = features.get(feature, 0) + 1
+        analytics['features'] = features
         
-        analytics['userTypeDistribution'] = {ut[0]: ut[1] for ut in user_types}
-        
-        # Age group distribution
-        age_groups = db.session.query(
-            Response.age_group, 
-            func.count(Response.id)
-        ).group_by(Response.age_group).all()
-        
-        analytics['ageGroupDistribution'] = {ag[0]: ag[1] for ag in age_groups}
-        
-        # Budget distribution
-        budgets = db.session.query(
-            Response.max_budget, 
-            func.count(Response.id)
-        ).group_by(Response.max_budget).all()
-        
-        analytics['budgetDistribution'] = {b[0]: b[1] for b in budgets if b[0]}
-        
-        # Top priorities (flatten lists and count)
+        # Calculate priority popularity
         priorities = {}
         for r in responses:
-            for p in r.get_priorities_list():
-                priorities[p] = priorities.get(p, 0) + 1
-                
-        analytics['topPriorities'] = [
-            {'priority': p, 'count': c} 
-            for p, c in sorted(priorities.items(), key=lambda x: x[1], reverse=True)
-        ][:5]  # Top 5
+            for priority in r.get_priorities_list():
+                priorities[priority] = priorities.get(priority, 0) + 1
+        analytics['priorities'] = priorities
         
-        # Top challenges
-        challenges = db.session.query(
-            Response.biggest_challenge, 
-            func.count(Response.id)
-        ).group_by(Response.biggest_challenge).all()
-        
-        analytics['topChallenges'] = [
-            {'challenge': c[0], 'count': c[1]} 
-            for c in sorted(challenges, key=lambda x: x[1], reverse=True)
-        ][:5]  # Top 5
-        
+        app.logger.info("Successfully generated analytics")
         return jsonify(analytics)
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        app.logger.error(f"Failed to generate analytics: {str(e)}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': 'Failed to generate analytics'
+        }), 500
+
+# Error handlers
+@app.errorhandler(404)
+def not_found_error(error):
+    app.logger.warning(f"404 Not Found: {request.url}")
+    return jsonify({'success': False, 'error': 'Endpoint not found'}), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    app.logger.error(f"500 Internal Server Error: {str(error)}", exc_info=True)
+    return jsonify({'success': False, 'error': 'Internal server error'}), 500
