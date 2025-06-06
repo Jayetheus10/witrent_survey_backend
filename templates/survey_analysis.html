@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WitRent Survey Analysis | Presentation</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #001f3f;  /* Dark navy */
+            --secondary: #2c3e50;
+            --accent: #3498db;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --success: #28a745;
+        }
+        
+        body {
+            font-family: 'Montserrat', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f7fa;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background-color: var(--primary);
+            color: white;
+            padding: 2rem 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        h1, h2, h3 {
+            margin: 0;
+            font-weight: 600;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            color: white;
+        }
+        
+        h2 {
+            font-size: 2rem;
+            color: var(--primary);
+            margin: 2rem 0 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--accent);
+        }
+        
+        h3 {
+            font-size: 1.5rem;
+            color: var(--secondary);
+            margin-bottom: 1rem;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin: 2rem 0;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        
+        .chart-container {
+            width: 100%;
+            height: 400px;
+            margin: 2rem 0;
+            padding: 1.5rem;
+            background: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+        }
+        
+        .total-responses {
+            background-color: var(--primary);
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        
+        .slide {
+            margin-bottom: 3rem;
+            padding-bottom: 2rem;
+        }
+        
+        .footer {
+            background-color: var(--primary);
+            color: white;
+            text-align: center;
+            padding: 1.5rem 0;
+            margin-top: 3rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container header-content">
+            <h1>WitRent Market Research Analysis</h1>
+            <div class="logo-placeholder" style="width: 100px; height: 50px; background-color: white;"></div>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="total-responses">Total Survey Responses: {{ data.total_responses }}</div>
+        
+        <div class="slide">
+            <h2>User Demographics</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Age Groups</h3>
+                    <canvas id="ageChart"></canvas>
+                </div>
+                <div class="stat-card">
+                    <h3>User Types</h3>
+                    <canvas id="userTypeChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="slide">
+            <h2>Housing Search Status</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Currently Looking for Housing</h3>
+                    <canvas id="lookingChart"></canvas>
+                </div>
+                <div class="stat-card">
+                    <h3>Future Search Plans</h3>
+                    <canvas id="futureLookingChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="slide">
+            <h2>Search Priorities</h2>
+            <div class="chart-container">
+                <canvas id="priorityChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="slide">
+            <h2>Budget Distribution</h2>
+            <div class="chart-container">
+                <canvas id="budgetChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="slide">
+            <h2>Search Methods</h2>
+            <div class="chart-container">
+                <canvas id="searchMethodChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="slide">
+            <h2>Market Challenges</h2>
+            <div class="chart-container">
+                <canvas id="challengeChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="slide">
+            <h2>Desired Features</h2>
+            <div class="chart-container">
+                <canvas id="featureChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="slide">
+            <h2>Early Access Interest</h2>
+            <div class="chart-container">
+                <canvas id="earlyAccessChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="footer">
+        <div class="container">
+            <p>WitRent Market Research</p>
+        </div>
+    </footer>
+
+    <script>
+        // Chart color palette
+        const chartColors = {
+            primary: '#001f3f',
+            secondary: '#2c3e50',
+            accent: '#3498db',
+            light: '#f8f9fa',
+            success: '#28a745',
+            colors: ['#001f3f', '#2c3e50', '#3498db', '#6c757d', '#28a745', '#17a2b8', '#ffc107']
+        };
+        
+        // Helper function to create charts
+        function createChart(id, type, labels, data, label, colors) {
+            const ctx = document.getElementById(id).getContext('2d');
+            return new Chart(ctx, {
+                type: type,
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: label,
+                        data: data,
+                        backgroundColor: colors || chartColors.colors,
+                        borderColor: type === 'line' ? chartColors.accent : undefined,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    family: 'Montserrat',
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            bodyFont: {
+                                family: 'Montserrat',
+                                size: 12
+                            },
+                            titleFont: {
+                                family: 'Montserrat',
+                                size: 14,
+                                weight: 'bold'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                font: {
+                                    family: 'Montserrat'
+                                }
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                font: {
+                                    family: 'Montserrat'
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Create all charts when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Age Groups Chart
+            createChart(
+                'ageChart', 
+                'doughnut', 
+                Object.keys({{ data.age_groups|tojson }}), 
+                Object.values({{ data.age_groups|tojson }}),
+                'Age Distribution'
+            );
+            
+            // User Types Chart
+            createChart(
+                'userTypeChart', 
+                'pie', 
+                Object.keys({{ data.user_types|tojson }}), 
+                Object.values({{ data.user_types|tojson }}),
+                'User Types'
+            );
+            
+            // Currently Looking Chart
+            createChart(
+                'lookingChart', 
+                'pie', 
+                Object.keys({{ data.looking_stats|tojson }}), 
+                Object.values({{ data.looking_stats|tojson }}),
+                'Currently Looking',
+                [chartColors.accent, chartColors.secondary]
+            );
+            
+            // Future Looking Chart
+            createChart(
+                'futureLookingChart', 
+                'bar', 
+                Object.keys({{ data.future_looking|tojson }}), 
+                Object.values({{ data.future_looking|tojson }}),
+                'Future Search Plans',
+                [chartColors.primary, chartColors.accent, chartColors.secondary]
+            );
+            
+            // Priorities Chart
+            createChart(
+                'priorityChart', 
+                'bar', 
+                Object.keys({{ data.priority_counts|tojson }}), 
+                Object.values({{ data.priority_counts|tojson }}),
+                'Search Priorities'
+            );
+            
+            // Budget Distribution Chart
+            createChart(
+                'budgetChart', 
+                'bar', 
+                Object.keys({{ data.budget_dist|tojson }}), 
+                Object.values({{ data.budget_dist|tojson }}),
+                'Budget Ranges'
+            );
+            
+            // Search Methods Chart
+            createChart(
+                'searchMethodChart', 
+                'pie', 
+                Object.keys({{ data.search_methods|tojson }}), 
+                Object.values({{ data.search_methods|tojson }}),
+                'Search Methods'
+            );
+            
+            // Challenges Chart
+            createChart(
+                'challengeChart', 
+                'horizontalBar', 
+                Object.keys({{ data.challenges|tojson }}), 
+                Object.values({{ data.challenges|tojson }}),
+                'Market Challenges'
+            );
+            
+            // Features Chart
+            createChart(
+                'featureChart', 
+                'bar', 
+                Object.keys({{ data.feature_counts|tojson }}), 
+                Object.values({{ data.feature_counts|tojson }}),
+                'Desired Features'
+            );
+            
+            // Early Access Chart
+            createChart(
+                'earlyAccessChart', 
+                'pie', 
+                Object.keys({{ data.early_access|tojson }}), 
+                Object.values({{ data.early_access|tojson }}),
+                'Early Access Interest',
+                [chartColors.success, chartColors.secondary]
+            );
+        });
+    </script>
+</body>
+</html>

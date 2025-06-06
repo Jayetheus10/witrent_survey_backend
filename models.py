@@ -1,5 +1,6 @@
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
+import json
 
 db = SQLAlchemy()
 
@@ -53,3 +54,25 @@ class Response(db.Model):
             'wants_early_access': self.wants_early_access,
             'phone_number': self.phone_number
         }
+    
+    def get_priorities_list(self):
+        if self.priorities:
+            try:
+                # Handle both JSON strings and Python list strings
+                if self.priorities.startswith('[') and self.priorities.endswith(']'):
+                    return json.loads(self.priorities.replace("'", '"'))
+                return json.loads(self.priorities)
+            except (json.JSONDecodeError, AttributeError):
+                return []
+        return []
+
+    def get_features_list(self):
+        if self.desired_features:
+            try:
+                # Handle both JSON strings and Python list strings
+                if self.desired_features.startswith('[') and self.desired_features.endswith(']'):
+                    return json.loads(self.desired_features.replace("'", '"'))
+                return json.loads(self.desired_features)
+            except (json.JSONDecodeError, AttributeError):
+                return []
+        return []
